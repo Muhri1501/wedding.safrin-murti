@@ -1068,30 +1068,33 @@ Atas kehadiran dan doa restunya, kami ucapkan terima kasih.
             </div>
         </section>
 
-        <section id="wishes" data-aos="fade-up">
-            <div class="decor-tl"></div> <!-- Kiri Atas -->
-            <div class="decor-tr"></div>
-            <div class="decor-bl"></div>
-            <div class="decor-br"></div>
-            <p class="title-decor">Doa Restu</p>
-            <h2>Ucapan & Kebahagiaan</h2>
-            <div class="gold-line"></div>
-            
-            <div class="glass-card">
-                <form class="wish-form" onsubmit="submitWish(event)">
-                    <div class="form-group">
-                        <label for="inputName">Nama Anda</label>
-                        <input type="text" id="inputName" class="form-control" placeholder="Masukkan nama lengkap" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="inputMessage">Pesan atau Doa Ucapan</label>
-                        <textarea id="inputMessage" class="form-control" rows="4" placeholder="Tuliskan doa restu terbaik Anda untuk kedua mempelai..." required></textarea>
-                    </div>
-                    <button type="submit" class="btn-premium" style="width: 100%; margin-top: 10px;">Kirim Ucapan</button>
-                </form>
+    <section id="wishes" data-aos="fade-up">
+    <div class="decor-tl"></div> <!-- Kiri Atas -->
+    <div class="decor-tr"></div>
+    <div class="decor-bl"></div>
+    <div class="decor-br"></div>
+    <p class="title-decor">Doa Restu</p>
+    <h2>Ucapan & Kebahagiaan</h2>
+    <div class="gold-line"></div>
+    
+    <div class="glass-card">
+        <form class="wish-form" id="wishForm">
+            <div class="form-group">
+                <label for="inputName">Nama Anda</label>
+                <input type="text" id="inputName" class="form-control" placeholder="Masukkan nama lengkap" required>
             </div>
-            <h1 style="font-family: 'Playfair Display', serif; font-size:1.2rem; color: var(--royal-gold); margin: 15px 0;">Safrin & Murti</h1>
-        </section>
+            <div class="form-group">
+                <label for="inputMessage">Pesan atau Doa Ucapan</label>
+                <textarea id="inputMessage" class="form-control" rows="4" placeholder="Tuliskan doa restu terbaik Anda untuk kedua mempelai..." required></textarea>
+            </div>
+            <button type="submit" class="btn-premium" style="width: 100%; margin-top: 10px;">Kirim Ucapan</button>
+        </form>
+
+        <!-- Daftar Ucapan yang Tersimpan -->
+        <div id="wishList" style="margin-top: 25px; max-height: 300px; overflow-y: auto; text-align: left; padding-right: 5px;"></div>
+    </div>
+    <h1 style="font-family: 'Playfair Display', serif; font-size:1.2rem; color: var(--royal-gold); margin: 15px 0;">Safrin & Murti</h1>
+</section>
 
     </div>
 
@@ -1114,6 +1117,74 @@ Atas kehadiran dan doa restunya, kami ucapkan terima kasih.
     </nav>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script>
+  // Konfigurasi Database Firebase sesuai dengan akun Anda
+  const firebaseConfig = {
+    databaseURL: "https://undangan-pernikahan-6cc85-default-rtdb.firebaseio.com"
+  };
+
+  // Inisialisasi Firebase
+  if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+  }
+  const database = firebase.database();
+
+  // 1. Kirim Ucapan ke Database
+  const wishForm = document.getElementById('wishForm');
+  if (wishForm) {
+      wishForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          
+          const nameInput = document.getElementById('inputName').value;
+          const messageInput = document.getElementById('inputMessage').value;
+
+          database.ref('wishes').push({
+              name: nameInput,
+              message: messageInput,
+              timestamp: Date.now()
+          }).then(() => {
+              wishForm.reset();
+          }).catch(error => {
+              alert('Gagal mengirim ucapan: ' + error.message);
+          });
+      });
+  }
+
+  // 2. Baca Ucapan Realtime dari Database
+  database.ref('wishes').on('value', (snapshot) => {
+      const wishList = document.getElementById('wishList');
+      if (!wishList) return;
+      
+      wishList.innerHTML = '';
+
+      const data = snapshot.val();
+      if (data) {
+          const wishesArray = Object.values(data).reverse();
+          
+          wishesArray.forEach(item => {
+              const card = document.createElement('div');
+              card.style.cssText = "background: rgba(255, 255, 255, 0.07); border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.15);";
+              card.innerHTML = `
+                  <strong style="color: var(--royal-gold, #d4af37); font-size: 0.85rem; display: block;">${escapeHtml(item.name)}</strong>
+                  <p style="margin: 4px 0 0; font-size: 0.8rem; opacity: 0.9; line-height: 1.4;">${escapeHtml(item.message)}</p>
+              `;
+              wishList.appendChild(card);
+          });
+      } else {
+          wishList.innerHTML = '<p style="font-size:0.8rem; opacity:0.7; text-align:center;">Belum ada ucapan. Kirim doa restu pertama Anda!</p>';
+      }
+  });
+
+  function escapeHtml(text) {
+      return text.replace(/[&<>"']/g, function(m) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+      });
+  }
+</script>
     <script>
         // --- SCRIPT PRELOADER ---
         let percent = 0;
